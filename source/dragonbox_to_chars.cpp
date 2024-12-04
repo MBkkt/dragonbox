@@ -76,26 +76,26 @@ namespace jkj {
                 '9', '5', '9', '6', '9', '7', '9', '8', '9', '9'  //
             };
             static constexpr char radix_100_head_table[200] JKJ_STATIC_DATA_SECTION = {
-                '0', '.', '1', '.', '2', '.', '3', '.', '4', '.', //
-                '5', '.', '6', '.', '7', '.', '8', '.', '9', '.', //
-                '1', '.', '1', '.', '1', '.', '1', '.', '1', '.', //
-                '1', '.', '1', '.', '1', '.', '1', '.', '1', '.', //
-                '2', '.', '2', '.', '2', '.', '2', '.', '2', '.', //
-                '2', '.', '2', '.', '2', '.', '2', '.', '2', '.', //
-                '3', '.', '3', '.', '3', '.', '3', '.', '3', '.', //
-                '3', '.', '3', '.', '3', '.', '3', '.', '3', '.', //
-                '4', '.', '4', '.', '4', '.', '4', '.', '4', '.', //
-                '4', '.', '4', '.', '4', '.', '4', '.', '4', '.', //
-                '5', '.', '5', '.', '5', '.', '5', '.', '5', '.', //
-                '5', '.', '5', '.', '5', '.', '5', '.', '5', '.', //
-                '6', '.', '6', '.', '6', '.', '6', '.', '6', '.', //
-                '6', '.', '6', '.', '6', '.', '6', '.', '6', '.', //
-                '7', '.', '7', '.', '7', '.', '7', '.', '7', '.', //
-                '7', '.', '7', '.', '7', '.', '7', '.', '7', '.', //
-                '8', '.', '8', '.', '8', '.', '8', '.', '8', '.', //
-                '8', '.', '8', '.', '8', '.', '8', '.', '8', '.', //
-                '9', '.', '9', '.', '9', '.', '9', '.', '9', '.', //
-                '9', '.', '9', '.', '9', '.', '9', '.', '9', '.'  //
+                '0', '0', '1', '1', '2', '2', '3', '3', '4', '4', //
+                '5', '5', '6', '6', '7', '7', '8', '8', '9', '9', //
+                '1', '0', '1', '1', '1', '2', '1', '3', '1', '4', //
+                '1', '5', '1', '6', '1', '7', '1', '8', '1', '9', //
+                '2', '0', '2', '1', '2', '2', '2', '3', '2', '4', //
+                '2', '5', '2', '6', '2', '7', '2', '8', '2', '9', //
+                '3', '0', '3', '1', '3', '2', '3', '3', '3', '4', //
+                '3', '5', '3', '6', '3', '7', '3', '8', '3', '9', //
+                '4', '0', '4', '1', '4', '2', '4', '3', '4', '4', //
+                '4', '5', '4', '6', '4', '7', '4', '8', '4', '9', //
+                '5', '0', '5', '1', '5', '2', '5', '3', '5', '4', //
+                '5', '5', '5', '6', '5', '7', '5', '8', '5', '9', //
+                '6', '0', '6', '1', '6', '2', '6', '3', '6', '4', //
+                '6', '5', '6', '6', '6', '7', '6', '8', '6', '9', //
+                '7', '0', '7', '1', '7', '2', '7', '3', '7', '4', //
+                '7', '5', '7', '6', '7', '7', '7', '8', '7', '9', //
+                '8', '0', '8', '1', '8', '2', '8', '3', '8', '4', //
+                '8', '5', '8', '6', '8', '7', '8', '8', '8', '9', //
+                '9', '0', '9', '1', '9', '2', '9', '3', '9', '4', //
+                '9', '5', '9', '6', '9', '7', '9', '8', '9', '9'  //
             };
 
             static void print_1_digit(int n, char* buffer) noexcept {
@@ -134,7 +134,13 @@ namespace jkj {
                     // 1441151882 = ceil(2^57 / 1'0000'0000) + 1
                     auto prod = s32 * UINT64_C(1441151882);
                     prod >>= 25;
-                    stdr::memcpy(buffer, radix_100_head_table + int(prod >> 32) * 2, 2);
+
+                    if (int pos = int(prod >> 32); pos < 10) {
+                        print_1_digit(pos, buffer + pos * 2);
+                        buffer[pos * 2 + 1] = '.';
+                    } else {
+                        stdr::memcpy(buffer, radix_100_table + pos * 2, 2);
+                    }
 
                     prod = (prod & UINT32_C(0xffffffff)) * 100;
                     print_2_digits(int(prod >> 32), buffer + 2);
@@ -158,10 +164,7 @@ namespace jkj {
                     // Otherwise, increase it by 6.
                     exponent += (6 + int(head_digits >= 10));
 
-                    // Write the first digit and the decimal point.
                     stdr::memcpy(buffer, radix_100_head_table + head_digits * 2, 2);
-                    // This third character may be overwritten later but we don't care.
-                    buffer[2] = radix_100_table[head_digits * 2 + 1];
 
                     // Remaining 6 digits are all zero?
                     if ((prod & UINT32_C(0xffffffff)) <=
@@ -220,10 +223,7 @@ namespace jkj {
                     // Otherwise, increase it by 4.
                     exponent += (4 + int(head_digits >= 10));
 
-                    // Write the first digit and the decimal point.
                     stdr::memcpy(buffer, radix_100_head_table + head_digits * 2, 2);
-                    // This third character may be overwritten later but we don't care.
-                    buffer[2] = radix_100_table[head_digits * 2 + 1];
 
                     // Remaining 4 digits are all zero?
                     if ((prod & UINT32_C(0xffffffff)) <=
@@ -265,10 +265,7 @@ namespace jkj {
                     // Otherwise, increase it by 2.
                     exponent += (2 + int(head_digits >= 10));
 
-                    // Write the first digit and the decimal point.
                     stdr::memcpy(buffer, radix_100_head_table + head_digits * 2, 2);
-                    // This third character may be overwritten later but we don't care.
-                    buffer[2] = radix_100_table[head_digits * 2 + 1];
 
                     // Remaining 2 digits are all zero?
                     if ((prod & UINT32_C(0xffffffff)) <=
@@ -294,10 +291,7 @@ namespace jkj {
                     // If s32 is of 2 digits, increase the exponent by 1.
                     exponent += int(s32 >= 10);
 
-                    // Write the first digit and the decimal point.
                     stdr::memcpy(buffer, radix_100_head_table + s32 * 2, 2);
-                    // This third character may be overwritten later but we don't care.
-                    buffer[2] = radix_100_table[s32 * 2 + 1];
 
                     // The number of characters actually written is 1 or 3, similarly to the case of
                     // 7 or 8 digits.
@@ -367,7 +361,14 @@ namespace jkj {
                         // 1441151882 = ceil(2^57 / 1'0000'0000) + 1
                         auto prod = first_block * UINT64_C(1441151882);
                         prod >>= 25;
-                        stdr::memcpy(buffer, radix_100_head_table + int(prod >> 32) * 2, 2);
+
+                        if (int pos = int(prod >> 32); pos < 10) {
+                            print_1_digit(pos, buffer + pos * 2);
+                            buffer[pos * 2 + 1] = '.';
+                        } else {
+                            stdr::memcpy(buffer, radix_100_table + pos * 2, 2);
+                        }
+
                         prod = (prod & UINT32_C(0xffffffff)) * 100;
                         print_2_digits(int(prod >> 32), buffer + 2);
                         prod = (prod & UINT32_C(0xffffffff)) * 100;
@@ -402,7 +403,6 @@ namespace jkj {
                             auto const head_digits = int(prod >> 32);
 
                             stdr::memcpy(buffer, radix_100_head_table + head_digits * 2, 2);
-                            buffer[2] = radix_100_table[head_digits * 2 + 1];
 
                             exponent += (6 + int(head_digits >= 10));
                             buffer += int(head_digits >= 10);
@@ -424,7 +424,6 @@ namespace jkj {
                             auto const head_digits = int(prod >> 32);
 
                             stdr::memcpy(buffer, radix_100_head_table + head_digits * 2, 2);
-                            buffer[2] = radix_100_table[head_digits * 2 + 1];
 
                             exponent += (4 + int(head_digits >= 10));
                             buffer += int(head_digits >= 10);
@@ -444,7 +443,6 @@ namespace jkj {
                             auto const head_digits = int(prod >> 32);
 
                             stdr::memcpy(buffer, radix_100_head_table + head_digits * 2, 2);
-                            buffer[2] = radix_100_table[head_digits * 2 + 1];
 
                             exponent += (2 + int(head_digits >= 10));
                             buffer += int(head_digits >= 10);
@@ -458,7 +456,6 @@ namespace jkj {
                         else {
                             // 1 or 2 digits.
                             stdr::memcpy(buffer, radix_100_head_table + first_block * 2, 2);
-                            buffer[2] = radix_100_table[first_block * 2 + 1];
 
                             exponent += int(first_block >= 10);
                             buffer += (2 + int(first_block >= 10));
@@ -522,8 +519,8 @@ namespace jkj {
                 if (exponent >= 100) {
                     // d1 = exponent / 10; d2 = exponent % 10;
                     // 6554 = ceil(2^16 / 10)
-                    auto d1 = (std::uint_least32_t(exponent) * UINT32_C(6554)) >> 16;
-                    auto d2 = std::uint_least32_t(exponent) - UINT32_C(10) * d1;
+                    auto d1 = (stdr::uint_least32_t(exponent) * UINT32_C(6554)) >> 16;
+                    auto d2 = stdr::uint_least32_t(exponent) - UINT32_C(10) * d1;
                     print_2_digits(int(d1), buffer);
                     print_1_digit(int(d2), buffer + 2);
                     buffer += 3;
